@@ -35,7 +35,8 @@ $(function() {
   const nowTime = Math.floor(new Date().getTime() / 1000);
 
   const apiUrl = 'https://mesh-test.movabletype.io/.data-api';
-  const siteId = '21132/blogs/65560';
+  const siteId = '21132';
+  const blogId = '65560';
 
 
   if (sessionStorage.getItem(currentSession)) {
@@ -111,11 +112,12 @@ $(function() {
     entry.title = $('#title').val();
     entry.body = $('#body').val();
     $.ajax({
-      url: apiUrl + '/v4/sites/' + siteId + '/entries',
+      url: apiUrl + '/v4/sites/' + siteId + /blogs/ blogId +'/entries',
       type: 'POST',
       dataType: 'json',
       headers: {
         'X-MT-Authorization': 'MTAuth accessToken=' + JSON.parse(sessionStorage.getItem(currentToken)).accessToken,
+        'Access-Control-Allow-Origin: *'
       },
       data: {
         'entry': JSON.stringify(entry)
