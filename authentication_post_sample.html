@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>autheticationを使った投稿サンプル</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+
+<body>
+
+<div class="container">
+  <div class="form-group col-sm-8" id="content">
+    <h2>サインイン</h2>
+    <div class="form-group">
+      <input class="form-control" id="username" placeholder="ユーザー名" type="text">
+    </div>
+    <div class="form-group">
+      <input class="form-control" id="password" placeholder="パスワード" type="password">
+    </div>
+    <div class="form-group">
+      <button id="signin">サインイン</button>
+    </div>
+  </div>
+</div>
+
+<script> 
+
+$(function() {
+  const clientId = 'authentication_post_sample';
+  const currentSession = 'mt_session_' + clientId;
+  const currentToken = 'mt_token_' + clientId;
+  const nowTime = Math.floor(new Date().getTime() / 1000);
+
+  const apiUrl = 'http://your-mt/mt-data-api.cgi';
+  const siteId = '投稿したいブログのID番号';
+
+
+  if (sessionStorage.getItem(currentSession)) {
+    haveSignedIn();
+  }
+
+  $('#signin').on('click', function() {
+    signIn();
+  });
+
+  $('#submit').on('click', function() {
+    var promise = Promise.resolve(checkToken());
+    promise.then(function() {
+      PostEntry();
+    });
+  });
+
+  $('#signout').on('click', function() {
+    revokeSession();
+  });
+
+  function haveSignedIn() {
+    const displayData = `
+        <h3>投稿する</h3>
+        <form class="col-sm-8">
+        <div class="form-group">
+          <input id="title" name="title" placeholder="タイトル" type="text"  class="form-control">
+        </div>
+        <div class="form-group">
+          <textarea id="body" maxlength="140" placeholder="本文" rows="7"  class="form-control"></textarea>
+        </div>
+        <div class="form-group">
+          <button id="submit" name="submit" type="button">投稿する</button>
+        </div>
+        <div class="form-group">
+          <button id="signout" name="signout" type="button">サインアウト</button>
+        </div>
+        </form>
+        `
+    $("#content").empty();
+    $("#content").append(displayData);
+  }
+
+  function signIn() {
+    const username = $('#username').val();
+    const password = $('#password').val();
+    $.ajax({
+      url: apiUrl + '/v3/authentication',
+      type: 'POST',
+      dataType: 'json',
+      data: {
+        'username': username,
+        'password': password,
+        'clientId': clientId,
+      }
+    }).done(function(data) {
+      sessionStorage.setItem(currentSession, data.sessionId);
+      let TokenData = {
+        'accessToken': data.accessToken,
+        'expiresIn': data.expiresIn,
+        'gotTokenTime': nowTime,
+      }
+      sessionStorage.setItem(currentToken, JSON.stringify(TokenData));
+      alert("サインインしました。");
+      location.reload();
+    }).fail(function(data) {
+      alert("サインイン時にエラーが発生しました。再度サインインをお試しください。");
+    });
+  }
+
+  function PostEntry() {
+    const entry = {};
+    entry.title = $('#title').val();
+    entry.body = $('#body').val();
+    $.ajax({
+      url: apiUrl + '/v3/sites/' + siteId + '/entries',
+      type: 'POST',
+      dataType: 'json',
+      headers: {
+        'X-MT-Authorization': 'MTAuth accessToken=' + JSON.parse(sessionStorage.getItem(currentToken)).accessToken,
+      },
+      data: {
+        'entry': JSON.stringify(entry)
+      },
+    }).done(function() {
+      alert("データを投稿しました。");
+    }).fail(function(data) {
+      alert("投稿時にエラーが発生しました。");
+    });
+  }
+
+  function revokeSession() {
+    $.ajax({
+      url: apiUrl + '/v3/token',
+      type: "DELETE",
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-MT-Authorization': 'MTAuth accessToken=' + JSON.parse(sessionStorage.getItem(currentToken)).accessToken,
+      }
+    }).done(function() {
+      $.ajax({
+        url: apiUrl + "/v3/authentication",
+        type: "DELETE",
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-MT-Authorization': 'MTAuth sessionId=' + sessionStorage.getItem(currentSession),
+        }
+      })
+    }).done(function() {
+      sessionStorage.removeItem(currentSession);
+      sessionStorage.removeItem(currentToken);
+      alert("サインアウトしました。");
+      location.reload();
+    }).fail(function(data) {
+      alert("サインアウト中にエラーが発生しました。もう一度サインインし直してください。");
+      sessionStorage.removeItem(currentSession);
+      sessionStorage.removeItem(currentToken);
+      location.reload();
+    });
+  }
+
+  function checkToken() {
+    const expiresIn = JSON.parse(sessionStorage.getItem(currentToken)).expiresIn;
+    const gotTokenTime = JSON.parse(sessionStorage.getItem(currentToken)).gotTokenTime;
+    if (nowTime >= expiresIn + gotTokenTime) {
+      refreshToken();
+    }
+  }
+
+  function refreshToken() {
+    $.ajax({
+      url: apiUrl + '/v3/token',
+      type: "DELETE",
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-MT-Authorization': 'MTAuth accessToken=' + JSON.parse(sessionStorage.getItem(currentToken)).accessToken,
+      }
+    }).done(function() {
+      $.ajax({
+        url: apiUrl + '/v3/token',
+        type: "POST",
+        dataType: "json",
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-MT-Authorization': 'MTAuth sessionId=' + sessionStorage.getItem(currentSession),
+        }
+      }).done(function(data) {
+        let TokenData = {
+          'accessToken': data.accessToken,
+          'expiresIn': data.expiresIn,
+          'gotTokenTime': nowTime,
+        }
+        sessionStorage.setItem(currentToken, JSON.stringify(TokenData));
+      }).fail(function(data) {
+        alert("アクセストークンのリフレッシュ中にエラーが発生しました。サインし直してください。");
+        sessionStorage.removeItem(currentSession);
+        sessionStorage.removeItem(currentToken);
+        location.reload();
+
+      });
+    });
+  }
+});
+
+
+</script>
+</body>
+</html>
