@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>autheticationを使ったサインインサンプル</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+
+<body>
+
+<div class="container">
+  <div class="form-group col-sm-8" id="content">
+    <h2>サインイン</h2>
+    <div class="form-group">
+      <input class="form-control" id="username" placeholder="ユーザー名" type="text">
+    </div>
+    <div class="form-group">
+      <input class="form-control" id="password" placeholder="パスワード" type="password">
+    </div>
+    <div class="form-group">
+      <button id="signin">サインイン</button>
+    </div>
+  </div>
+</div>
+
+
+<script> 
+
+$(function() {
+  const clientId = 'authentication_signin_sample';
+  const currentSession = 'mt_session_' + clientId;
+  const apiUrl = 'https://mesh-test.movabletype.io/.data-api';
+
+  if (sessionStorage.getItem(currentSession)) {
+    haveSignedIn();
+  }
+
+  $('#signin').on('click', function() {
+    signIn();
+  });
+
+  function haveSignedIn() {
+    const displayData = `
+        <div>
+          <p>サインインしています。</p>
+        </div>
+        `
+    $("#content").empty();
+    $("#content").append(displayData);
+  }
+
+  function signIn() {
+    const username = $('#username').val();
+    const password = $('#password').val();
+    $.ajax({
+      url: apiUrl + '/v3/authentication',
+      type: 'POST',
+      dataType: 'json',
+      data: {
+        'username': username,
+        'password': password,
+        'clientId': clientId,
+      }
+    }).done(function(data) {
+      sessionStorage.setItem(currentSession, data.sessionId);
+      alert("サインインしました。");
+      location.reload();
+    }).fail(function(data) {
+      alert("サインイン時にエラーが発生しました。再度サインインをお試しください。");
+    });
+  }
+
+});
+
+</script>
+</body>
+</html>
