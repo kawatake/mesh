@@ -83,7 +83,7 @@ $(function() {
     const username = $('#username').val();
     const password = $('#password').val();
     $.ajax({
-      url: apiUrl + '/v3/authentication',
+      url: apiUrl + '/v4/authentication',
       type: 'POST',
       dataType: 'json',
       data: {
@@ -111,7 +111,7 @@ $(function() {
     entry.title = $('#title').val();
     entry.body = $('#body').val();
     $.ajax({
-      url: apiUrl + '/v3/sites/' + siteId + '/entries',
+      url: apiUrl + '/v4/sites/' + siteId + '/entries',
       type: 'POST',
       dataType: 'json',
       headers: {
@@ -129,7 +129,7 @@ $(function() {
 
   function revokeSession() {
     $.ajax({
-      url: apiUrl + '/v3/token',
+      url: apiUrl + '/v4/token',
       type: "DELETE",
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -137,7 +137,7 @@ $(function() {
       }
     }).done(function() {
       $.ajax({
-        url: apiUrl + "/v3/authentication",
+        url: apiUrl + "/v4/authentication",
         type: "DELETE",
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -167,7 +167,7 @@ $(function() {
 
   function refreshToken() {
     $.ajax({
-      url: apiUrl + '/v3/token',
+      url: apiUrl + '/v4/token',
       type: "DELETE",
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -175,7 +175,7 @@ $(function() {
       }
     }).done(function() {
       $.ajax({
-        url: apiUrl + '/v3/token',
+        url: apiUrl + '/v4/token',
         type: "POST",
         dataType: "json",
         headers: {
