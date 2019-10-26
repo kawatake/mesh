@@ -117,7 +117,7 @@ $(function() {
       dataType: 'json',
       headers: {
         'X-MT-Authorization': 'MTAuth accessToken=' + JSON.parse(sessionStorage.getItem(currentToken)).accessToken,
-        'Access-Control-Allow-Origin: *'
+        'Access-Control-Allow-Origin': '*',
       },
       data: {
         'entry': JSON.stringify(entry)
