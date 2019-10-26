@@ -112,7 +112,7 @@ $(function() {
     entry.title = $('#title').val();
     entry.body = $('#body').val();
     $.ajax({
-      url: apiUrl + '/v4/sites/' + siteId + /blogs/ blogId +'/entries',
+      url: apiUrl + '/v4/sites/' + siteId + '/blogs/' + blogId +'/entries',
       type: 'POST',
       dataType: 'json',
       headers: {
